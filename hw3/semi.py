@@ -4,6 +4,7 @@ import math
 import time
 import random
 import sys
+import os
 #from PIL import Image
 
 from keras.models import Sequential
@@ -17,7 +18,6 @@ from keras.regularizers import l2
 from keras import regularizers
 from keras.models import load_model
 
-train_csv = sys.argv[1]
 
 def histeqq(im,nbr_bins=256):
 
@@ -36,12 +36,10 @@ train_out = []
 test_in = []
 test_out = []
 
-vi = []
-vo = []
-
 train_N = 28709
+test_N = 7178
 
-with open(train_csv, 'r') as fp:
+with open('train.csv', 'r') as fp:
     fp.readline()
     for i in range(train_N):
         a = fp.readline().replace('\n','').split(',')
@@ -68,62 +66,56 @@ for T in range(N):
     for i in range(48*48):
         train_in[T][i] /= 255
 
-total = len(train_in)
+with open('test.csv', 'r') as fp:
+    fp.readline()
+    for i in range(test_N):
+        a = fp.readline().replace('\n','').split(',')
+        label = int(a[0])
+        feature = a[1].split(' ')
+        feature = [int(x) for x in feature]
+        test_in.append(feature)
 
-vi = train_in[: int(total * 0.1)]
-train_in = train_in[int(total * 0.1):]
-vo = train_out[: int(total * 0.1)]
-train_out = train_out[int(total * 0.1):]
+N = len(test_in)
+for T in range(N):
+    out = numpy.array(test_in[T])
+    out = out.reshape(48,48)
+    out, h = histeqq(out)
+    test_in[T] = out.reshape(48*48)
+    for i in range(48*48):
+        test_in[T][i] /= 255
+
+total = len(train_in)
 
 train_in = numpy.array(train_in)
 train_out = numpy.array(train_out)
+test_in = numpy.array(test_in)
 
-vi = numpy.array(vi)
-vo = numpy.array(vo)
-
-
-model2 = Sequential()
-
-model2.add(Convolution2D(32,3,3, activation='relu', input_shape=(48,48,1)))
-model2.add(BatchNormalization())
-model2.add(Dropout(0.25))
-model2.add(Convolution2D(32,3,3, activation='relu'))
-model2.add(AveragePooling2D(2,2))
-model2.add(Dropout(0.25))
-
-model2.add(Convolution2D(64,3,3, activation='relu', input_shape=(48,48,1)))
-model2.add(BatchNormalization())
-model2.add(Dropout(0.25))
-model2.add(Convolution2D(64,3,3, activation='relu'))
-model2.add(ZeroPadding2D((1,1)))
-model2.add(AveragePooling2D(2,2))
-model2.add(Dropout(0.25))
-
-model2.add(Convolution2D(128,3,3, activation='relu', input_shape=(48,48,1)))
-model2.add(BatchNormalization())
-model2.add(Dropout(0.25))
-model2.add(Convolution2D(128,3,3, activation='relu'))
-model2.add(ZeroPadding2D((1,1)))
-model2.add(MaxPooling2D(2,2))
-model2.add(Dropout(0.25))
-
-model2.add(Flatten())
-
-model2.add(Dropout(0.5))
-model2.add(Dense(7))
-model2.add(Activation('softmax'))
-model2.summary()
-model2.compile(loss='categorical_crossentropy',optimizer="adam",metrics=['accuracy'])
-
+test_in=test_in.reshape(test_in.shape[0],48,48,1)
 train_in=train_in.reshape(train_in.shape[0],48,48,1)
-vi=vi.reshape(vi.shape[0],48,48,1)
 
-with open("progress.txt", "w") as fp:
-    for i in range(100):
-        model2.fit(train_in, train_out, epochs=1, batch_size=128, validation_data=(vi, vo))
-        score = model2.evaluate(train_in, train_out)
-        a = score[1]
-        score = model2.evaluate(vi, vo)
-        b = score[1]
-        fp.write("%f %f\n" % (a, b))
-model2.save('my_model2.h5')
+model = load_model(os.path.join(os.path.dirname(__file__),'my_model2.h5'))
+out = model.predict(test_in)
+
+for i in range(test_N):
+    ma = 0
+    ans = -1
+    tmp = []
+    for j in range(7):
+        if out[i][j] > ma:
+            ma = out[i][j]
+            ans = j
+        tmp.append(0)
+    tmp[ans] = 1
+    test_out.append(tmp)
+
+test_out = numpy.array(test_out)
+
+train_in = numpy.append(train_in, test_in, axis=0)
+train_out = numpy.append(train_out, test_out, axis=0)
+
+print (len(train_in))
+print (len(test_in))
+
+model.fit(train_in, train_out, epochs=10, batch_size=128, validation_split=0.1)
+
+model.save('my_model_semi.h5')
