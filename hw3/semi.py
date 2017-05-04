@@ -6,6 +6,11 @@ import random
 import sys
 import os
 #from PIL import Image
+import tensorflow as tf
+from keras.backend.tensorflow_backend import set_session
+config = tf.ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.1
+set_session(tf.Session(config=config))
 
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
@@ -39,7 +44,7 @@ test_out = []
 train_N = 28709
 test_N = 7178
 
-with open('train.csv', 'r') as fp:
+with open('/tmp/train.csv', 'r') as fp:
     fp.readline()
     for i in range(train_N):
         a = fp.readline().replace('\n','').split(',')
@@ -66,7 +71,7 @@ for T in range(N):
     for i in range(48*48):
         train_in[T][i] /= 255
 
-with open('test.csv', 'r') as fp:
+with open('/tmp/test.csv', 'r') as fp:
     fp.readline()
     for i in range(test_N):
         a = fp.readline().replace('\n','').split(',')
@@ -116,6 +121,6 @@ train_out = numpy.append(train_out, test_out, axis=0)
 print (len(train_in))
 print (len(test_in))
 
-model.fit(train_in, train_out, epochs=10, batch_size=128, validation_split=0.1)
+model.fit(train_in, train_out, epochs=87, batch_size=128, validation_split=0.1)
 
 model.save('my_model_semi.h5')
