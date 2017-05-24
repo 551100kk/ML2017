@@ -1,0 +1,13 @@
+Cython
+numpy
+tensorflow
+keras
+h5py
+nltk
+adjustText
+scikit-learn
+scikit-image
+scikit-neuralnetwork
+scipy
+Theano
+word2vec
