@@ -62,5 +62,5 @@ with open(ans_csv, 'w') as fp:
 			ans = 47
 
 		print ((TEST, ans, math.log(ans)))
-
+		fp.write('%d,%f\n' % (TEST, math.log(ans)))
 os._exit(0)
