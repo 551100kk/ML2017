@@ -88,14 +88,13 @@ def main():
     path_train  = '../input/train.csv'
     path_test   = '../input/test.csv'
     path_macro  = '../input/macro.csv'
-    path_xgb    = 'xgb.csv'
-    path_ans    = 'ans.csv'
+    path_dnn    = 'dnn.csv'
 
     first_output = first_model(path_train, path_test)
     print ('First OK')
 
     result = first_output
-    result.to_csv(path_xgb, index=False)
+    result.to_csv(path_dnn, index=False)
     print ('Output merged')
 
 
