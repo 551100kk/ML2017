@@ -1,0 +1,9 @@
+Cython
+numpy
+tensorflow
+keras
+h5py
+scikit-learn
+scikit-image
+scikit-neuralnetwork
+xgboost
